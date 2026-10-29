@@ -56,6 +56,11 @@ on:
         description: "Keep stock KMI generation suffix in kernel version (fix #265)"
         type: boolean
         default: false
+      custom_build_timestamp:
+        description: "Custom build timestamp (e.g. 'Wed Apr 15 01:39:41 UTC 2026'; empty = use patch-date rule)"
+        required: false
+        type: string
+        default: ""
       commit_mode:
         description: "latest = branch tips, verified = audited pins, update = build latest then promote verified pins on success"
         required: false
