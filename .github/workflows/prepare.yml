@@ -350,6 +350,7 @@ jobs:
       droidspaces_commit: ${{ inputs.droidspaces_commit }}
       brand_name: ${{ inputs.brand_name }}
       keep_kmi: ${{ inputs.keep_kmi }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch }}
       use_cache: ${{ inputs.use_cache }}
       page_size: ${{ inputs.page_size }}
