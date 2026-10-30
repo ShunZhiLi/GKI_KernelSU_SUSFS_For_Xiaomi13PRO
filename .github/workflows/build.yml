@@ -245,6 +245,35 @@ jobs:
           sublevel: ${{ steps.extract.outputs.sublevel }}
           os_patch_level: ${{ inputs.os_patch_level }}
 
+      - name: Apply CVE-2026-43499 rtmutex fix chain
+        if: contains(inputs.feature_set, 'CVE-RTMutex')
+        shell: bash
+        env:
+          PATCH_DIR: ${{ github.workspace }}/security_patch
+          KVER: ${{ inputs.kernel_version }}
+          SUBLEVEL: ${{ steps.extract.outputs.sublevel }}
+        run: |
+          set -euo pipefail
+          # 自适应定位内核源码根（download-kernel 的落点未在 workflow 中显式暴露）
+          KSRC=""
+          for d in \
+            "${{ github.workspace }}/kernel/common" \
+            "${{ github.workspace }}/kernel_platform/common" \
+            "${{ github.workspace }}/common" \
+            "${{ github.workspace }}/kernel"; do
+            if [ -f "$d/Makefile" ] && grep -q '^VERSION = ' "$d/Makefile" 2>/dev/null; then
+              KSRC="$d"; break
+            fi
+          done
+          if [ -z "$KSRC" ]; then
+            echo "ERROR: 无法定位内核源码目录（common/），请检查 download-kernel 的落点" >&2
+            find "${{ github.workspace }}" -maxdepth 4 -name Makefile -path '*/common/*' 2>/dev/null || true
+            exit 1
+          fi
+          echo "Kernel source: $KSRC"
+          cd "$KSRC"
+          bash "$PATCH_DIR/apply_cve_2026_43499.sh" "$KVER" "$SUBLEVEL" "$PATCH_DIR"    
+
       - name: Reject KowSU with SUSFS
         if: inputs.root_flavor == 'kowsu' && (contains(inputs.feature_set, 'SUSFS') || inputs.feature_set == 'All')
         shell: bash
