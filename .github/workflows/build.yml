@@ -426,7 +426,12 @@ jobs:
 
       - name: Clean Kernel Flags
         uses: ./.github/actions/clean-kernel-flags
-
+        
+      - name: Strip dirty suffix from kernel release
+        run: |
+          # 自动寻找并修改内核构建脚本，去掉 dirty 逻辑
+          find . -name setlocalversion -exec sed -i 's/-dirty//g' {} \;
+          
       - name: Scan and collect patch rejects
         id: scan
         if: always()
