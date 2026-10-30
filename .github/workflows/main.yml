@@ -127,7 +127,11 @@ on:
       use_cve_rtmutex:
         description: "CVE-2026-43499 rtmutex 修复链"
         type: boolean
-        default: false  
+        default: false
+      use_rekernel:
+        description: "Re-Kernel (墓碑优化)"
+        type: boolean
+        default: false     
       kernel_runner:
         description: "Runner image for the build legs (ubuntu-24.04 = default, ubuntu-latest = newer image A/B)"
         type: choice
@@ -140,10 +144,7 @@ on:
         type: boolean
         default: false
         
-      use_rekernel:
-        description: "Re-Kernel (墓碑优化)"
-        type: boolean
-        default: false   
+      
   # schedule:  # nightly automatic builds disabled - user opt-in via workflow_dispatch only
   #   - cron: "0 5 * * 1" # Monday 12am EST (5am UTC)
 
