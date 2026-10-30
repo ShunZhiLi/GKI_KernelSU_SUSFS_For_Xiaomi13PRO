@@ -76,6 +76,11 @@ on:
         required: false
         type: boolean
         default: false
+      custom_build_timestamp:
+        description: "Custom build timestamp (empty = patch-date rule)"
+        required: false
+        type: string
+        default: ""  
       use_cache:
         description: "Enable ccache/bazel cache (restore/save via release buckets)"
         required: false
