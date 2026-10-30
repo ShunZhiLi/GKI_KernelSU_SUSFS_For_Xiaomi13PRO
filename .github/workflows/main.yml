@@ -515,6 +515,7 @@ jobs:
             F_DS=true;     F_NTSYNC=true;  F_PTRACE=true; F_UNICODE=true
             F_BPF=true;    F_PERF=false
             F_CVE_RTMUTEX=true
+            F_REKERNEL=false
           else
             F_SUSFS="${{ inputs.use_susfs }}";   F_NOMOUNT="${{ inputs.use_nomount }}"
             F_BBG="${{ inputs.use_bbg }}";        F_NET="${{ inputs.use_net }}"
@@ -522,6 +523,7 @@ jobs:
             F_PTRACE="${{ inputs.use_ptrace }}";  F_UNICODE="${{ inputs.use_unicode }}"
             F_BPF="${{ inputs.use_bpf }}";        F_PERF="${{ inputs.use_perf }}"
             F_CVE_RTMUTEX="${{ inputs.use_cve_rtmutex }}"
+            F_REKERNEL="${{ inputs.use_rekernel }}"
           fi
 
           FEATURES=""
@@ -536,6 +538,7 @@ jobs:
           [ "$F_BPF" = "true" ] && FEATURES="${FEATURES}BPF+"
           [ "$F_PERF" = "true" ] && FEATURES="${FEATURES}Perf+"
           [ "$F_CVE_RTMUTEX" = "true" ] && FEATURES="${FEATURES}CVE-RTMutex+"
+          [ "$F_REKERNEL" = "true" ] && FEATURES="${FEATURES}ReKernel+"
           echo "feature_set=${FEATURES%+}" >> "$GITHUB_OUTPUT"
 
       - name: Clone shared source repos once
