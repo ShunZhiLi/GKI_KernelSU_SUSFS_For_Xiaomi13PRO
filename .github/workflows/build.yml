@@ -545,6 +545,54 @@ jobs:
 
       - name: Initialize Config Fragment
         run: touch "${{ github.workspace }}/wild_gki.fragment"
+        
+# 集成rekernel
+      - name: Integrate Re-Kernel
+        if: contains(inputs.feature_set, 'ReKernel')
+        shell: bash
+        run: |
+          set -euo pipefail
+          KSRC="${{ github.workspace }}/kernel/common"
+          DEFCONFIG_PATH="${{ github.workspace }}/config/xiaomi13pro_stock_defconfig"
+          
+          echo "Integrating Re-Kernel into $KSRC"
+          TMP_REKERNEL=/tmp/rekernel
+          rm -rf "$TMP_REKERNEL"
+          git clone --depth 1 https://github.com/Sakion-Team/Re-Kernel.git "$TMP_REKERNEL"
+
+          # 同步驱动源码
+          rm -rf "$KSRC/drivers/rekernel"
+          mkdir -p "$KSRC/drivers/rekernel"
+          cp -a "$TMP_REKERNEL/LKM-Source/." "$KSRC/drivers/rekernel/"
+
+          # 适配内置编译
+          REKERNEL_MAKEFILE="$KSRC/drivers/rekernel/Makefile"
+          sed -i 's/^obj-m := rekernel\.o$/obj-$(CONFIG_REKERNEL) += rekernel.o/' "$REKERNEL_MAKEFILE"
+          grep -qF 'ccflags-$(CONFIG_REKERNEL_LEGACY_NETLINK) += -DLEGACY_NETLINK' "$REKERNEL_MAKEFILE" || \
+            echo 'ccflags-$(CONFIG_REKERNEL_LEGACY_NETLINK) += -DLEGACY_NETLINK' >> "$REKERNEL_MAKEFILE"
+          sed -i '/^[[:space:]]*depends on MODULES[[:space:]]*$/d' "$KSRC/drivers/rekernel/Kconfig"
+
+          # 挂载到驱动树
+          if ! grep -qF 'source "drivers/rekernel/Kconfig"' "$KSRC/drivers/Kconfig"; then
+            sed -i '/^endmenu$/i source "drivers/rekernel/Kconfig"' "$KSRC/drivers/Kconfig"
+          fi
+          if ! grep -qF 'obj-$(CONFIG_REKERNEL) += rekernel/' "$KSRC/drivers/Makefile"; then
+            echo 'obj-$(CONFIG_REKERNEL) += rekernel/' >> "$KSRC/drivers/Makefile"
+          fi
+
+          # 头文件适配
+          sed -i 's|#include <../android/binder_internal.h>|#include "../android/binder_internal.h"|g' "$KSRC/drivers/rekernel/rekernel_binder.c"
+          grep -qF '#include <linux/seq_file.h>' "$KSRC/drivers/rekernel/rekernel_binder.c" || \
+            sed -i '/#include <linux\/kprobes.h>/a #include <linux/seq_file.h>' "$KSRC/drivers/rekernel/rekernel_binder.c"
+
+          # 配置 defconfig（幂等）
+          if [ -f "$DEFCONFIG_PATH" ]; then
+            grep -q '^CONFIG_REKERNEL=y$' "$DEFCONFIG_PATH" || echo "CONFIG_REKERNEL=y" >> "$DEFCONFIG_PATH"
+            grep -q '^CONFIG_REKERNEL_NETWORK=y$' "$DEFCONFIG_PATH" || echo "CONFIG_REKERNEL_NETWORK=y" >> "$DEFCONFIG_PATH"
+            echo "Appended CONFIG_REKERNEL to $DEFCONFIG_PATH"
+          else
+            echo "WARNING: defconfig not found at $DEFCONFIG_PATH, config may need manual handling" >&2
+          fi
 
       - name: Apply Kernel Bypass Hack
         if: ${{ inputs.allow_version_mismatch == 'true' }}
