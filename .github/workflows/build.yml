@@ -189,6 +189,7 @@ jobs:
           CUSTOM_TS: ${{ inputs.custom_build_timestamp }}
         run: |
           set -x
+          echo "CUSTOM_TS=[${{ inputs.custom_build_timestamp }}]"
           if [ -n "${CUSTOM_TS:-}" ]; then
             # 用户自定义时间：直接使用，支持 "Wed Apr 15 01:39:41 UTC 2026"
             # 也支持 "2026-04-15 01:39:41 UTC" 这类格式
