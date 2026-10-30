@@ -312,6 +312,19 @@ jobs:
           flavor: ${{ inputs.root_flavor }}
           commit: ${{ inputs.root_commit }}
 
+      - name: Remove --dirty from BakaSU/KernelSU version
+        if: inputs.root_flavor != '' && inputs.root_flavor != 'none'
+        shell: bash
+        run: |
+          set -euo pipefail
+          KSRC="${{ github.workspace }}/kernel/common"
+          echo "Stripping --dirty from KSU version generator..."
+          # 全局搜索 Makefile 或 Kbuild，把 --dirty 删掉
+          find "$KSRC" -type f \( -name "Makefile" -o -name "Kbuild" -o -name "*.mk" \) -exec grep -l "\-\-dirty" {} \; | while read -r file; do
+            echo "Patching $file"
+            sed -i 's/--dirty//g' "$file"
+          done
+
       - name: Mark No Root build metadata
         if: inputs.root_flavor == 'none'
         shell: bash
