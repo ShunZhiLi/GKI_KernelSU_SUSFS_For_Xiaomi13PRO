@@ -236,6 +236,20 @@ jobs:
           variant: ${{ inputs.variant }}
           page_size: ${{ inputs.page_size }}
 
+      - name: Force Clean Local Version (Remove dirty)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 定位到内核源码目录
+          KSRC="${{ github.workspace }}/kernel/common"
+          if [ -f "$KSRC/scripts/setlocalversion" ]; then
+            echo "[+] Stripping dirty flag logic from setlocalversion"
+            # 将检测 dirty 的那几行代码替换掉，让它永远认为源码是干净的
+            sed -i 's/if test -n "$(git status --porcelain 2>\/dev\/null)"; then/if false; then/' "$KSRC/scripts/setlocalversion"
+            sed -i 's/if test -n "$(git diff-index --name-only HEAD 2>\/dev\/null)"; then/if false; then/' "$KSRC/scripts/setlocalversion"
+            sed -i 's/if test -n "$(git diff-index --name-only HEAD)" 2>\/dev\/null; then/if false; then/' "$KSRC/scripts/setlocalversion"
+          fi    
+
       - name: Kernel Fixes
         uses: ./.github/actions/kernel-fixes
         with:
