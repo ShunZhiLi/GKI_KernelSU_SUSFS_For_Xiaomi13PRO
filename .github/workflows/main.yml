@@ -123,6 +123,11 @@ on:
         description: "Performance"
         type: boolean
         default: false
+  #新功能
+      use_cve_rtmutex:
+        description: "CVE-2026-43499 rtmutex 修复链"
+        type: boolean
+        default: false  
       kernel_runner:
         description: "Runner image for the build legs (ubuntu-24.04 = default, ubuntu-latest = newer image A/B)"
         type: choice
