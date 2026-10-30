@@ -3,6 +3,11 @@ name: Prepare and Build
 on:
   workflow_call:
     inputs:
+      custom_build_timestamp:
+        description: "Custom build timestamp"
+        required: false
+        type: string
+        default: ""
       runner:
         description: 'Runner image label for the build jobs (ubuntu-24.04 or ubuntu-latest)'
         required: false
