@@ -311,20 +311,35 @@ jobs:
         with:
           flavor: ${{ inputs.root_flavor }}
           commit: ${{ inputs.root_commit }}
-
-      - name: Remove --dirty from BakaSU/KernelSU version
-        if: inputs.root_flavor != '' && inputs.root_flavor != 'none'
+        #去除
+      - name: Remove -dirty from BakaSU Version
+        if: inputs.root_flavor == 'bakasu'
         shell: bash
         run: |
-          set -euo pipefail
-          KSRC="${{ github.workspace }}/kernel/common"
-          echo "Stripping --dirty from KSU version generator..."
-          # 全局搜索 Makefile 或 Kbuild，把 --dirty 删掉
-          find "$KSRC" -type f \( -name "Makefile" -o -name "Kbuild" -o -name "*.mk" \) -exec grep -l "\-\-dirty" {} \; | while read -r file; do
-            echo "Patching $file"
-            sed -i 's/--dirty//g' "$file"
-          done
-
+         set -euo pipefail
+         KSRC="${{ github.workspace }}/kernel/common"
+    
+         echo "Searching for --dirty in BakaSU sources..."
+    
+         # BakaSU 的版本号生成逻辑通常在 Makefile、Kbuild 或 scripts 里
+         # 我们全局搜索并抹除 --dirty
+         grep -rl --include="Makefile" --include="Kbuild" --include="*.mk" --include="*.sh" --include="*.h" -- "--dirty" "$KSRC" 2>/dev/null | while read -r file; do
+         # 为了安全起见，只处理包含 BakaSU 或 KernelSU 相关路径的文件
+         if echo "$file" | grep -iqE "bakasu|kernelsu|ksu"; then
+          echo "Stripping --dirty from $file"
+         sed -i 's/--dirty//g' "$file"
+         fi
+         done
+    
+         # 有的版本可能会直接在代码里拼死 "-dirty" 字符串，直接全局替换成空
+         grep -rl --include="*.c" --include="*.h" -- "-dirty" "$KSRC" 2>/dev/null | while read -r file; do
+         if echo "$file" | grep -iqE "bakasu|kernelsu|ksu"; then
+         echo "Stripping literal -dirty from $file"
+         sed -i 's/-dirty//g' "$file"
+         fi
+         done
+         echo "BakaSU dirty check removed."
+         
       - name: Mark No Root build metadata
         if: inputs.root_flavor == 'none'
         shell: bash
@@ -601,29 +616,7 @@ jobs:
           version: ${{ inputs.version }}
           allow_version_mismatch: true
 
-       #去除dirty   
-      - name: Force Remove Dirty Flag
-        shell: bash
-        run: |
-         set -euo pipefail
-         KSRC="${{ github.workspace }}/kernel/common"
-         cd "$KSRC"
-    
-         echo "[+] Modifying scripts/setlocalversion to kill -dirty..."
-    
-         # 检查文件是否存在
-         if [ -f "scripts/setlocalversion" ]; then
-         # 方法 1：把官方脚本里所有打印 -dirty 的地方强行改成打印空字符
-           sed -i 's/echo "-dirty"/echo ""/g' scripts/setlocalversion
-      
-         # 方法 2：把判断是否有修改的逻辑破坏掉
-           sed -i 's/if test -n "$(git status --porcelain 2>\/dev\/null)"; then/if false; then/g' scripts/setlocalversion
-           sed -i 's/if test -n "$(git diff-index --name-only HEAD 2>\/dev\/null)"; then/if false; then/g' scripts/setlocalversion
-      
-           echo "[+] setlocalversion patched."
-         else
-           echo "[-] scripts/setlocalversion not found!"
-         fi
+       
       - name: Build Normal Kernel
         env:
           SOURCE_DATE_EPOCH: ${{ env.SOURCE_DATE_EPOCH }}
