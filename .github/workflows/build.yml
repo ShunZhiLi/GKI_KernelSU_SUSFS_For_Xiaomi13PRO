@@ -601,6 +601,34 @@ jobs:
           version: ${{ inputs.version }}
           allow_version_mismatch: true
 
+       #去除dirty   
+      - name: Hide Dirty Flag via Git Commit
+        shell: bash
+        run: |
+         set -euo pipefail
+         KSRC="${{ github.workspace }}/kernel/common"
+         cd "$KSRC"
+    
+         echo "Hiding all patched modifications from Git..."
+         # 1. 确保 Git 身份已配置（防止 CI 环境报错）
+         git config user.name "CI Builder"
+         git config user.email "ci@builder.local"
+    
+         # 2. 将所有未跟踪的新文件和被修改的文件添加到暂存区
+         git add -A
+    
+         # 3. 强行提交。如果此时本来就没有修改，|| true 可以防止 job 失败
+         git commit -m "chore: hide dirty flag for compilation" --no-verify || true
+    
+         # 4. 验证一下现在的 git 状态
+         echo "Current git status:"
+         git status --short
+    
+         # 5. 欺骗 setlocalversion，如果它还在检测
+         if [ -f "scripts/setlocalversion" ]; then
+           sed -i 's/echo "-dirty"/echo ""/g' scripts/setlocalversion
+         fi
+
       - name: Build Normal Kernel
         env:
           SOURCE_DATE_EPOCH: ${{ env.SOURCE_DATE_EPOCH }}
