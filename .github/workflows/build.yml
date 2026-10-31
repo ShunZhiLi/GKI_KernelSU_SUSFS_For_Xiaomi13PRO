@@ -602,33 +602,28 @@ jobs:
           allow_version_mismatch: true
 
        #去除dirty   
-      - name: Hide Dirty Flag via Git Commit
+      - name: Force Remove Dirty Flag
         shell: bash
         run: |
          set -euo pipefail
          KSRC="${{ github.workspace }}/kernel/common"
          cd "$KSRC"
     
-         echo "Hiding all patched modifications from Git..."
-         # 1. 确保 Git 身份已配置（防止 CI 环境报错）
-         git config user.name "CI Builder"
-         git config user.email "ci@builder.local"
+         echo "[+] Modifying scripts/setlocalversion to kill -dirty..."
     
-         # 2. 将所有未跟踪的新文件和被修改的文件添加到暂存区
-         git add -A
-    
-         # 3. 强行提交。如果此时本来就没有修改，|| true 可以防止 job 失败
-         git commit -m "chore: hide dirty flag for compilation" --no-verify || true
-    
-         # 4. 验证一下现在的 git 状态
-         echo "Current git status:"
-         git status --short
-    
-         # 5. 欺骗 setlocalversion，如果它还在检测
+         # 检查文件是否存在
          if [ -f "scripts/setlocalversion" ]; then
+         # 方法 1：把官方脚本里所有打印 -dirty 的地方强行改成打印空字符
            sed -i 's/echo "-dirty"/echo ""/g' scripts/setlocalversion
+      
+         # 方法 2：把判断是否有修改的逻辑破坏掉
+           sed -i 's/if test -n "$(git status --porcelain 2>\/dev\/null)"; then/if false; then/g' scripts/setlocalversion
+           sed -i 's/if test -n "$(git diff-index --name-only HEAD 2>\/dev\/null)"; then/if false; then/g' scripts/setlocalversion
+      
+           echo "[+] setlocalversion patched."
+         else
+           echo "[-] scripts/setlocalversion not found!"
          fi
-
       - name: Build Normal Kernel
         env:
           SOURCE_DATE_EPOCH: ${{ env.SOURCE_DATE_EPOCH }}
