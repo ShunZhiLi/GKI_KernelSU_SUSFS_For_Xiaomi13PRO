@@ -451,43 +451,43 @@ jobs:
           sublevel: ${{ steps.extract.outputs.sublevel }}
           brand_name: ${{ inputs.brand_name }}
           keep_kmi: ${{ inputs.keep_kmi }}
-      #去除dirty
+      # 去除dirty
       - name: Force Clean Kernel Version (Remove dirty)
-  shell: bash
-  run: |
-    set -euo pipefail
-    KSRC="${{ github.workspace }}/kernel/common"
-    cd "$KSRC"
+        shell: bash
+        run: |
+         set -euo pipefail
+         KSRC="${{ github.workspace }}/kernel/common"
+         cd "$KSRC"
     
-    echo "=== 强行重写 setlocalversion，干掉所有 git 检测和 dirty ==="
+         echo "=== 强行重写 setlocalversion，干掉所有 git 检测和 dirty ==="
     
-    # 1. 无论什么版本，先干掉可能存在的 dirty 检查
-    if [ -f "scripts/setlocalversion" ]; then
-      sed -i 's/-dirty//' scripts/setlocalversion
-    fi
+         # 1. 无论什么版本，先干掉可能存在的 dirty 检查
+         if [ -f "scripts/setlocalversion" ]; then
+         sed -i 's/-dirty//' scripts/setlocalversion
+         fi
     
-    # 2. 强行伪造一个干净的哈希和后缀，覆盖原本的输出
-    BID="ab$((RANDOM % 90000000 + 10000000))"
-    GHASH=$(git rev-parse --verify HEAD | cut -c1-13)
+         # 2. 强行伪造一个干净的哈希和后缀，覆盖原本的输出
+         BID="ab$((RANDOM % 90000000 + 10000000))"
+         GHASH=$(git rev-parse --verify HEAD | cut -c1-13)
     
-    case "${{ inputs.version }}" in
-      android14-6.1)  KMI_TAG="android14-11" ;;
-      android15-6.6)  KMI_TAG="android15-8" ;;
-      android16-6.12) KMI_TAG="android16-5" ;;
-      *) KMI_TAG="${{ inputs.android_version }}" ;;
-    esac
+         case "${{ inputs.version }}" in
+         android14-6.1)  KMI_TAG="android14-11" ;;
+         android15-6.6)  KMI_TAG="android15-8" ;;
+         android16-6.12) KMI_TAG="android16-5" ;;
+         *) KMI_TAG="${{ inputs.android_version }}" ;;
+         esac
 
-    if [ "${{ inputs.kernel_version }}" = "6.1" ]; then
-      KMI_LOCAL="-${KMI_TAG}-g${GHASH}-${BID}-4k"
-      sed -i "\$s|echo \"\$res\"|echo \"${KMI_LOCAL}\"|" ./scripts/setlocalversion 2>/dev/null || true
-      sed -i "/^CONFIG_LOCALVERSION=/ s/=\"[^\"]*\"/=\"${KMI_LOCAL}\"/" ./arch/arm64/configs/gki_defconfig 2>/dev/null || true
-    else
-      SUFFIX="-${KMI_TAG}-g${GHASH}-${BID}"
-      # 这句 perl 是核心，直接把 setlocalversion 的最终输出替换成我们伪造的 SUFFIX
-      perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\$\{KERNELVERSION\}'"${SUFFIX}"'\$\{config_localversion\}"/s' ./scripts/setlocalversion 2>/dev/null || true
-    fi
+         if [ "${{ inputs.kernel_version }}" = "6.1" ]; then
+         KMI_LOCAL="-${KMI_TAG}-g${GHASH}-${BID}-4k"
+         sed -i "\$s|echo \"\$res\"|echo \"${KMI_LOCAL}\"|" ./scripts/setlocalversion 2>/dev/null || true
+         sed -i "/^CONFIG_LOCALVERSION=/ s/=\"[^\"]*\"/=\"${KMI_LOCAL}\"/" ./arch/arm64/configs/gki_defconfig 2>/dev/null || true
+         else
+         SUFFIX="-${KMI_TAG}-g${GHASH}-${BID}"
+         # 这句 perl 是核心，直接把 setlocalversion 的最终输出替换成我们伪造的 SUFFIX
+         perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\$\{KERNELVERSION\}'"${SUFFIX}"'\$\{config_localversion\}"/s' ./scripts/setlocalversion 2>/dev/null || true
+         fi
     
-    echo "[+] 强行清理完成，编译时不可能再出现 dirty。"
+         echo "[+] 强行清理完成，编译时不可能再出现 dirty。"
 
       - name: Remove Protected Exports
         uses: ./.github/actions/remove-protected-exports
@@ -557,6 +557,21 @@ jobs:
 
       - name: Initialize Config Fragment
         run: touch "${{ github.workspace }}/wild_gki.fragment"
+#去除dirty
+      - name: Enforce BakaSU Version Format
+        if: inputs.root_flavor == 'bakasu'
+        shell: bash
+        run: |
+         set -euo pipefail
+         KSRC="${{ github.workspace }}/kernel/common"
+         DEFCONFIG_PATH="${{ github.workspace }}/config/xiaomi13pro_stock_defconfig"
+    
+         echo "=== 强制覆盖 BakaSU 的版本显示格式 ==="
+         if [ -f "$DEFCONFIG_PATH" ]; then
+         grep -q '^CONFIG_KSU_FULL_NAME_FORMAT=' "$DEFCONFIG_PATH" || \
+         echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@%REPO_NAME%"' >> "$DEFCONFIG_PATH"
+         echo "已写入 CONFIG_KSU_FULL_NAME_FORMAT"
+         fi
         
 # 集成rekernel
       - name: Integrate Re-Kernel
