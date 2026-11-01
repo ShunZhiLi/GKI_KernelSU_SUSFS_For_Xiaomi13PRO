@@ -575,48 +575,6 @@ jobs:
         with:
           version: ${{ inputs.version }}
           allow_version_mismatch: true
-#去除dirty
-      - name: Ultimate Dirty Killer
-        shell: bash
-        run: |
-         set -euo pipefail
-         KSRC="${{ github.workspace }}/kernel/common"
-         cd "$KSRC"
-
-         echo "=== 终极灭杀 -dirty ==="
-
-         # 1. 暴力抹除 setlocalversion 里的所有 dirty 相关字眼
-         if [ -f "scripts/setlocalversion" ]; then
-         sed -i 's/-dirty//g' scripts/setlocalversion
-         sed -i 's/echo "-dirty"/echo ""/g' scripts/setlocalversion
-         sed -i 's/if test -n "$(git status --porcelain 2>\/dev\/null)"; then/if false; then/g' scripts/setlocalversion
-         sed -i 's/if test -n "$(git diff-index --name-only HEAD 2>\/dev\/null)"; then/if false; then/g' scripts/setlocalversion
-         fi
-
-         # 2. 暴力搜捕整个内核树里所有包含 --dirty 的 Makefile 和 Kbuild，直接删掉
-         echo "搜捕 BakaSU 的 Makefile..."
-         find . -type f \( -name "Makefile" -o -name "Kbuild" -o -name "*.mk" \) -exec grep -l -- "--dirty" {} \; 2>/dev/null | while read -r file; do
-         echo "  清理: $file"
-         sed -i 's/--dirty//g' "$file"
-         done
-
-         # 3. 最致命的一击：清除内核编译残留的缓存文件
-         # 这些文件会导致之前的 dirty 状态被缓存下来
-         rm -rf include/config/kernel.release 2>/dev/null || true
-         rm -rf include/generated/utsrelease.h 2>/dev/null || true
-         rm -rf .scmversion 2>/dev/null || true
-
-         # 4. 欺骗 Git，让所有的 git diff 瞬间失效（强行认为所有文件都没被改过）
-         git update-index --assume-unchanged $(git ls-files -m) 2>/dev/null || true
-
-         # 5. 强行把 BakaSU 管理器显示的格式再次写死（确保覆盖任何缓存）
-         DEFCONFIG_PATH="${{ github.workspace }}/config/xiaomi13pro_stock_defconfig"
-         if [ -f "$DEFCONFIG_PATH" ]; then
-         sed -i '/^CONFIG_KSU_FULL_NAME_FORMAT=/d' "$DEFCONFIG_PATH"
-         echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@%REPO_NAME%"' >> "$DEFCONFIG_PATH"
-         fi
-
-         echo "=== 终极灭杀完成，准备编译 ===" 
          
       - name: Build Normal Kernel
         env:
