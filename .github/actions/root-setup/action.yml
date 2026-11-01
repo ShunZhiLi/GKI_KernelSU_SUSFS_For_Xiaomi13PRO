@@ -98,7 +98,7 @@ runs:
           echo "Selected root checkout does not contain a kernel integration." >&2
           exit 1
         fi
-        root_version="$(git -C "$directory" describe --tags --always )"
+        root_version="$(git -C "$directory" describe --tags --always | sed 's/-dirty//g')"
 
         relative_kernel="$(realpath --relative-to="$drivers_dir" "$PWD/$directory/kernel")"
         ln -s "$relative_kernel" "$drivers_dir/kernelsu"
