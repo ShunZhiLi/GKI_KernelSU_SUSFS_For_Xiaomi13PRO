@@ -118,6 +118,11 @@ on:
         description: "Render release notes preview only (skip all builds + release)"
         type: boolean
         default: false
+      custom_build_timestamp:
+       description: "Custom kernel build timestamp (UTC), e.g. Wed Apr 15 01:39:41 UTC 2026; empty uses the default"
+       required: false
+       type: string
+       default: ""  
   # schedule:  # nightly automatic builds disabled - user opt-in via workflow_dispatch only
   #   - cron: "0 5 * * 1" # Monday 12am EST (5am UTC)
 
@@ -679,6 +684,7 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
 
   build-android13-5-10:
@@ -709,6 +715,7 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
 
   build-android13-5-15:
@@ -739,6 +746,7 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
 
   build-android14-5-15:
@@ -769,6 +777,7 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
 
   build-android14-6-1:
@@ -799,6 +808,7 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
 
   build-android15-6-6:
@@ -829,6 +839,7 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
 
   build-android16-6-12:
@@ -859,6 +870,7 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
 
   build-android17-6-18:
@@ -894,6 +906,7 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
 
   telegram-announce:
