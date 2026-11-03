@@ -67,6 +67,11 @@ on:
         required: false
         type: boolean
         default: false
+      custom_build_timestamp:
+        description: "Custom kernel build timestamp in UTC; empty uses the default"
+        required: false
+        type: string
+        default: ""  
       allow_version_mismatch:
         required: false
         type: boolean
