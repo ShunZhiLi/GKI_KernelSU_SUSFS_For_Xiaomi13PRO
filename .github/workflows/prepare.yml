@@ -86,6 +86,11 @@ on:
         required: false
         type: string
         default: "4k"
+      custom_build_timestamp:
+        description: "Custom kernel build timestamp in UTC; empty uses the default"
+        required: false
+        type: string
+        default: ""  
 
 jobs:
   generate-matrix:
@@ -340,4 +345,5 @@ jobs:
       allow_version_mismatch: ${{ inputs.allow_version_mismatch }}
       page_size: ${{ inputs.page_size }}
       stock_config_artifact: stock-configs-${{ needs.generate-matrix.outputs.version_slug }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
     secrets: inherit
