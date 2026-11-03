@@ -53,6 +53,11 @@ on:
         description: "Keep stock KMI generation suffix in kernel version (fix #265)"
         type: boolean
         default: false
+      custom_build_timestamp:
+       description: "Custom kernel build timestamp (UTC), e.g. Wed Apr 15 01:39:41 UTC 2026; empty uses the default"
+       required: false
+       type: string
+       default: ""  
       commit_mode:
         description: "latest = branch tips, verified = audited pins"
         required: false
@@ -118,11 +123,7 @@ on:
         description: "Render release notes preview only (skip all builds + release)"
         type: boolean
         default: false
-      custom_build_timestamp:
-       description: "Custom kernel build timestamp (UTC), e.g. Wed Apr 15 01:39:41 UTC 2026; empty uses the default"
-       required: false
-       type: string
-       default: ""  
+        
   # schedule:  # nightly automatic builds disabled - user opt-in via workflow_dispatch only
   #   - cron: "0 5 * * 1" # Monday 12am EST (5am UTC)
 
