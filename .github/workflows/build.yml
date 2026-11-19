@@ -67,6 +67,11 @@ on:
         required: false
         type: boolean
         default: false
+      custom_build_timestamp:
+        description: "Custom kernel build timestamp in UTC; empty uses the default"
+        required: false
+        type: string
+        default: ""
       allow_version_mismatch:
         required: false
         type: boolean
@@ -150,10 +155,51 @@ jobs:
           page_size: ${{ inputs.page_size }}
           stock_config_dir: stock-configs
 
-      - name: Set Build Timestamp from Kernel Commit
-        uses: ./.github/actions/set-build-timestamp-from-kernel-commit
-        with:
-          os_patch_level: ${{ inputs.os_patch_level }}
+      - name: Set Build Timestamp
+        shell: bash
+        env:
+           CUSTOM_BUILD_TIMESTAMP: ${{ inputs.custom_build_timestamp }}
+           OS_PATCH_LEVEL: ${{ inputs.os_patch_level }}
+        run: |
+           set -euo pipefail
+
+           if [[ -n "$CUSTOM_BUILD_TIMESTAMP" ]]; then
+            # 使用 UTC 解析，并检查输入是否符合指定格式且星期正确。
+            NORMALIZED="$(date -u -d "$CUSTOM_BUILD_TIMESTAMP" '+%a %b %d %H:%M:%S UTC %Y')"
+            if [[ "$NORMALIZED" != "$CUSTOM_BUILD_TIMESTAMP" ]]; then
+               echo "ERROR: timestamp must be valid and formatted like:" >&2
+               echo "Wed Apr 15 01:39:41 UTC 2026" >&2
+               echo "Received: $CUSTOM_BUILD_TIMESTAMP" >&2
+               echo "Parsed as: $NORMALIZED" >&2
+               exit 1
+            fi
+            KBUILD_TS="$NORMALIZED"
+           else
+            # 默认行为：按 OS 补丁日期生成时间。
+            if [[ "$OS_PATCH_LEVEL" == lts* ]]; then
+              if [[ "$OS_PATCH_LEVEL" =~ ^lts-([0-9]{2})$ ]]; then
+                 OS_PATCH_LEVEL_YM="$(date -u +%Y)-${BASH_REMATCH[1]}"
+             else
+                 OS_PATCH_LEVEL_YM="$(date -u +%Y-%m)"
+             fi
+            else
+              OS_PATCH_LEVEL_YM="$OS_PATCH_LEVEL"
+           fi
+           KBUILD_TS="$(date -u -d "${OS_PATCH_LEVEL_YM}-05 04:20:00 UTC" \
+              '+%a %b %d %H:%M:%S UTC %Y')"
+           fi
+
+           SOURCE_DATE_EPOCH="$(date -u -d "$KBUILD_TS" +%s)"
+           GIT_DATE="$(date -u -d "@${SOURCE_DATE_EPOCH}" '+%Y-%m-%dT%H:%M:%SZ')"
+
+           {
+             echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
+             echo "KBUILD_BUILD_TIMESTAMP=$KBUILD_TS"
+             echo "GIT_COMMITTER_DATE=$GIT_DATE"
+             echo "GIT_AUTHOR_DATE=$GIT_DATE"
+           } >> "$GITHUB_ENV"
+           echo "Build timestamp set to: $KBUILD_TS"
+        
       - name: Extract Sublevel and Set File Name
         id: extract
         uses: ./.github/actions/extract-sublevel-file-name
