@@ -768,6 +768,7 @@ jobs:
       droidspaces_commit: ${{ needs.resolve-sources.outputs.droidspaces_commit }}
       brand_name: ${{ github.event_name == 'schedule' && 'Wild' || inputs.brand_name }}
       keep_kmi: ${{ inputs.keep_kmi || false }}
+      custom_build_timestamp: ${{ inputs.custom_build_timestamp }}
       os_patch_level: ${{ inputs.os_patch_level || 'All' }}
       allow_version_mismatch: ${{ inputs.allow_version_mismatch || false }}
       page_size: ${{ inputs.page_size || '4k' }}
